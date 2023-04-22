@@ -20,6 +20,15 @@ blueprint:
         target:
           entity:
             domain: light
+    no_motion_wait:
+      name: Wait time
+      description: Time to leave the light on after last motion is detected.
+      default: 120
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
     sunset_dimming:
       name: Sunset Dimming
       description: Set light brightness to this value after sunset.

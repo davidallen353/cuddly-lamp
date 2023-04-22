@@ -60,10 +60,10 @@ trigger:
   from: "off"
   to: "on"
 
-condition:
-  condition: state
-  entity_id: sun.sun
-  state: "below_horizon"
+# condition:
+#   condition: state
+#   entity_id: sun.sun
+#   state: "below_horizon"
 
 action:
   - alias: "Turn on the light"

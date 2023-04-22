@@ -20,15 +20,6 @@ blueprint:
         target:
           entity:
             domain: light
-    no_motion_wait:
-      name: Wait time
-      description: Time to leave the light on after last motion is detected.
-      default: 120
-      selector:
-        number:
-          min: 0
-          max: 3600
-          unit_of_measurement: seconds
     sunset_dimming:
       name: Sunset Dimming
       description: Set light brightness to this value after sunset.
@@ -47,6 +38,16 @@ blueprint:
           min: 0
           max: 100
           unit_of_measurement: "%"
+    no_motion_wait:
+      name: Wait time
+      description: Time to leave the light on after last motion is detected.
+      default: 120
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+    
 
 # If motion is detected within the delay,
 # we restart the script.
@@ -65,41 +66,29 @@ condition:
   state: "below_horizon"
 
 action:
-  - choose:
-      - conditions:
-          - condition: state
-            entity_id: sun.sun
-            state: "below_horizon"
-        sequence:
-          - service: light.turn_on
-            target: !input light_target
-            data:
-              brightness_pct: !input sunset_dimming
+  - alias: "Turn on the light"
+    service: light.turn_on
+    target: !input light_target
+    data:
+      brightness_pct: !input day_brightness
   - alias: "Wait until there is no motion from device"
     wait_for_trigger:
       platform: state
       entity_id: !input motion_entity
       from: "on"
       to: "off"
+  - alias: "Wait the number of seconds that has been set"
+    delay: !input no_motion_wait
   - choose:
       - conditions:
           - condition: state
             entity_id: sun.sun
             state: "below_horizon"
         sequence:
-          - delay: !input no_motion_wait
           - service: light.turn_on
             target: !input light_target
             data:
               brightness_pct: !input sunset_dimming
-          - wait_for_trigger:
-              platform: state
-              entity_id: !input motion_entity
-              from: "on"
-              to: "off"
-          - delay: !input no_motion_wait
-          - service: light.turn_off
-            target: !input light_target
       - conditions:
           - condition: state
             entity_id: sun.sun
@@ -107,13 +96,3 @@ action:
         sequence:
           - service: light.turn_off
             target: !input light_target
-  - choose:
-      - conditions:
-          - condition: state
-            entity_id: sun.sun
-            state: "above_horizon"
-        sequence:
-          - service: light.turn_on
-            target: !input light_target
-            data:
-              brightness_pct: !input day_brightness

@@ -5,7 +5,7 @@ blueprint:
   name: Motion-activated Light with Day/Night Control
   description: Turn on and dim lights when motion is detected after sunset, and turn off during the day.
   domain: automation
-  source_url: 
+  source_url: https://github.com/davidallen353/cuddly-lamp/blob/main/blueprints/motion_lights_with_daynight.yaml
   author: David Allen
   input:
     motion_entity:
@@ -23,11 +23,11 @@ blueprint:
     sunset_dimming:
       name: Sunset Dimming
       description: Set light brightness to this value after sunset.
-      default: 30
+      default: 10
       selector:
         number:
           min: 0
-          max: 255
+          max: 100
           unit_of_measurement: "%"
     day_brightness:
       name: Day Brightness
@@ -36,7 +36,7 @@ blueprint:
       selector:
         number:
           min: 0
-          max: 255
+          max: 100
           unit_of_measurement: "%"
 
 # If motion is detected within the delay,

@@ -1,0 +1,110 @@
+# Modified from the Home Assistant Motion-Activated Lights
+# Used under apache-2 license
+# https://github.com/home-assistant/core/blob/dev/homeassistant/components/automation/blueprints/motion_light.yaml
+blueprint:
+  name: Motion-activated Light with Day/Night Control
+  description: Turn on and dim lights when motion is detected after sunset, and turn off during the day.
+  domain: automation
+  source_url: 
+  author: David Allen
+  input:
+    motion_entity:
+      name: Motion Sensor
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: motion
+    light_target:
+      name: Light
+      selector:
+        target:
+          entity:
+            domain: light
+    sunset_dimming:
+      name: Sunset Dimming
+      description: Set light brightness to this value after sunset.
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 255
+          unit_of_measurement: "%"
+    day_brightness:
+      name: Day Brightness
+      description: Set light brightness to this value during the day.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 255
+          unit_of_measurement: "%"
+
+# If motion is detected within the delay,
+# we restart the script.
+mode: restart
+max_exceeded: silent
+
+trigger:
+  platform: state
+  entity_id: !input motion_entity
+  from: "off"
+  to: "on"
+
+condition:
+  condition: state
+  entity_id: sun.sun
+  state: "below_horizon"
+
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: sun.sun
+            state: "below_horizon"
+        sequence:
+          - service: light.turn_on
+            target: !input light_target
+            data:
+              brightness_pct: !input sunset_dimming
+  - alias: "Wait until there is no motion from device"
+    wait_for_trigger:
+      platform: state
+      entity_id: !input motion_entity
+      from: "on"
+      to: "off"
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: sun.sun
+            state: "below_horizon"
+        sequence:
+          - delay: !input no_motion_wait
+          - service: light.turn_on
+            target: !input light_target
+            data:
+              brightness_pct: !input sunset_dimming
+          - wait_for_trigger:
+              platform: state
+              entity_id: !input motion_entity
+              from: "on"
+              to: "off"
+          - delay: !input no_motion_wait
+          - service: light.turn_off
+            target: !input light_target
+      - conditions:
+          - condition: state
+            entity_id: sun.sun
+            state: "above_horizon"
+        sequence:
+          - service: light.turn_off
+            target: !input light_target
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: sun.sun
+            state: "above_horizon"
+        sequence:
+          - service: light.turn_on
+            target: !input light_target
+            data:
+              brightness_pct: !input day_brightness
